@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSPC Component Consolidation Diagram</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f8f9fa;
+    color: #1a1a2e;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 1.6rem;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+  }
+  .diagram-section {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .diagram-section h2 {
+    font-size: 1.15rem;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+  .legend {
+    max-width: 1100px;
+    margin: 0 auto 30px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+
+<h1>VSPC Component Consolidation Map</h1>
+<p class="subtitle">Automated migrations, manual merges, and removals &mdash; 2026 Rebrand</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source component (being migrated)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#27ae60"></div> Target component (survives)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f39c12"></div> Manual migration target</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#e74c3c"></div> Retired after migration</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#6c7a7d"></div> Removed (no migration)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#9b59b6"></div> Skipped (broken ref / missing data)</div>
+</div>
+
+<div class="diagram-section">
+  <h2>Automated Migrations (3 Drush commands)</h2>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  subgraph mig1["Migration 1: experience_story"]
+    direction LR
+    FS["featured_story\n(230)"] -->|"Runner resolves\nfield_node_ref →\n__resolved_node"| RES["__resolved_node\n(title, body,\nfield_image)"] -->|"Transformer\nfield remap"| ES["experience_story"]
+    FS -.->|"broken ref\n(no entity)"| SKIP["skipped\n(no body/image)"]:::skipped
+  end
+
+  subgraph mig2["Migration 2: vertical_media_carousel (new)"]
+    direction LR
+    VVC["vertical_video_carousel\n(18)"]:::source -->|"remote_video paragraphs\nre-parented as-is"| VMC["vertical_media_carousel\n(117 total)"]:::target
+    VPC["vertical_photo_carousel\n(99)"]:::source -->|merged into\nvertical_media_carousel| VMC
+  end
+
+  subgraph mig3["Migration 3: media_carousel (highest complexity)"]
+    direction LR
+    SE["slideshow_experience\n(87)"]:::source -->|"experience_slide →\nmedia_with_caption paragraph"| MC["media_carousel"]:::target
+    PC["photo_carousel\n(277)"]:::source -->|"bare media ref →\nmedia_with_caption paragraph"| MC
+    SDI["single_double_image\n(653)"]:::source -->|"extract field_caption_image\nfrom each paragraph →\nmedia_with_caption paragraph(s)"| MC
+  end
+
+  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
+  classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  classDef skipped fill:#9b59b6,stroke:#7d3c98,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Manual Migrations (editor intervention required)</h2>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  subgraph manual["Manual Merges"]
+    direction LR
+    BQ["Blockquote\n(11)"]:::source -->|manual| SBC["Secondary\nBody Copy"]:::manual
+    CTA["CTAs\n(36)"]:::source -->|manual| SBC
+    CC["Content Categories\n(41)"]:::source -->|manual| CT["Content Tiles"]:::manual
+    LVE["Lightbox Video\nExperience (16)"]:::source -->|manual| MC2["Media Carousel"]:::manual
+  end
+
+  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
+  classDef manual fill:#f39c12,stroke:#c77d0a,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Simple Removals (no migration needed)</h2>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  ELV["Experience\nLooping Video (1)"]:::remove --> X["REMOVED"]:::removed
+  EP["Experience\nPhoto (1)"]:::remove --> X
+  OMN["Omnivirt\n(0)"]:::remove --> X
+  T360["Threshold360\nMap (12)"]:::remove --> X
+  VS["Video\nSlideshow (13)"]:::remove --> X
+
+  classDef remove fill:#e74c3c,stroke:#c0392b,color:#fff
+  classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Full Picture: Before &rarr; After</h2>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '13px' }}}%%
+flowchart TB
+  subgraph before["BEFORE (component types in migration scope)"]
+    direction TB
+    b1["featured_story (230)"]:::source
+    b2["vertical_video_carousel (18)"]:::source
+    b3["vertical_photo_carousel (99)"]:::source
+    b4["slideshow_experience (87)"]:::source
+    b5["photo_carousel (277)"]:::source
+    b6["single_double_image (653)"]:::source
+    b7["Blockquote (11)"]:::source
+    b8["CTAs (36)"]:::source
+    b9["Content Categories (41)"]:::source
+    b10["Lightbox Video Exp. (16)"]:::source
+    b11["Exp. Looping Video (1)"]:::remove
+    b12["Experience Photo (1)"]:::remove
+    b13["Omnivirt (0)"]:::remove
+    b14["Threshold360 Map (12)"]:::remove
+    b15["Video Slideshow (13)"]:::remove
+  end
+
+  subgraph after["AFTER (consolidated types)"]
+    direction TB
+    a1["experience_story"]:::target
+    a2["vertical_media_carousel\n(117, new)"]:::target
+    a3["media_carousel"]:::target
+    a4["Secondary Body Copy\n+ Content Tiles"]:::manual
+    a5["REMOVED (5 types)"]:::removed
+  end
+
+  b1 --> a1
+  b2 --> a2
+  b3 --> a2
+  b4 --> a3
+  b5 --> a3
+  b6 --> a3
+  b7 --> a4
+  b8 --> a4
+  b9 --> a4
+  b10 --> a3
+  b11 --> a5
+  b12 --> a5
+  b13 --> a5
+  b14 --> a5
+  b15 --> a5
+
+  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
+  classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  classDef manual fill:#f39c12,stroke:#c77d0a,color:#fff
+  classDef remove fill:#e74c3c,stroke:#c0392b,color:#fff
+  classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    flowchart: { curve: 'basis', padding: 16 }
+  });
+</script>
+</body>
+</html>
