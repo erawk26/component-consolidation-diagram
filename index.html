@@ -110,7 +110,7 @@ flowchart LR
 
   subgraph mig3["3. media_carousel (highest complexity)"]
     direction LR
-    SDI["single_double_image\n(0)"]:::source -->|"412"| MC["media_carousel\n1,151 live"]:::target
+    SDI["single_double_image\n(0)"]:::source -->|"412 migrated\n373 one-image, 37 two-image, 2 empty"| MC["media_carousel\n1,151 live"]:::target
     PC["photo_carousel\n(0)"]:::source -->|"198"| MC
     SE["slideshow_experience\n(0)"]:::source -->|"73"| MC
     LVE["lightbox_video_experience\n(0)"]:::source -->|"11"| MC
