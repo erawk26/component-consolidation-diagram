@@ -81,7 +81,7 @@
 
 <h1>VSPC Component Consolidation Map</h1>
 <p class="subtitle">2026 Rebrand. Counts verified against the rebuild <strong>live</strong> environment, 2026-07-29.<br>
-Edges show how many entities the consolidator migrated; target nodes show how many that bundle holds on live now (migrated + editor-authored).</p>
+Edges show how many entities were migrated; target nodes show how many that bundle holds on live now (migrated + editor-authored). Covers both the vspc_consolidator migrations and the separate listing-grid migration (vspc_ai_listings_migrate).</p>
 
 <div class="legend">
   <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source (migrated, then deleted &mdash; 0 on live)</div>
@@ -126,6 +126,19 @@ flowchart LR
     CTA["cta\n(0)"]:::source -->|"203"| SB["secondary_body\n2,480 live"]:::target
   end
 
+  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
+  classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Listing Grids &rarr; Intelligent Listings (separate module: <code>vspc_ai_listings_migrate</code>)</h2>
+  <span class="status done">DONE on live &mdash; profile_grid migrated and removed (0 on live)</span>
+  <p class="note">Not part of vspc_consolidator. <code>drush vspc-ai-listings:migrate-profile-grid</code> turns each static profile_grid into a miles_ai paragraph wrapped in an ai_component, remapping the grid's scope and facets. This migration keeps no ledger table, so the migrated count is from the run log (worksheet Step 8), not re-derived from live. The ai_component live total includes editor-authored components, not only migrated grids.</p>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  PG["profile_grid\n(0 on live)"]:::source -->|"118 migrated,\n26 orphans skipped"| AIC["ai_component\n(miles_ai paragraph)\n143 live"]:::target
   classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
   </div>
