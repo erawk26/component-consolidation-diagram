@@ -33,9 +33,24 @@
   }
   .diagram-section h2 {
     font-size: 1.15rem;
-    margin: 0 0 16px;
+    margin: 0 0 6px;
     padding-bottom: 8px;
     border-bottom: 2px solid #e0e0e0;
+  }
+  .status {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+  .status.done { background: #d4efdf; color: #1e6b3f; }
+  .status.pending { background: #fdebd0; color: #99610a; }
+  .diagram-section p.note {
+    margin: 0 0 16px;
+    color: #666;
+    font-size: 0.85rem;
   }
   .mermaid {
     display: flex;
@@ -65,112 +80,125 @@
 <body>
 
 <h1>VSPC Component Consolidation Map</h1>
-<p class="subtitle">Automated migrations, manual merges, and removals &mdash; 2026 Rebrand</p>
+<p class="subtitle">2026 Rebrand. Counts verified against the rebuild <strong>live</strong> environment, 2026-07-29.<br>
+Edges show how many entities the consolidator migrated; target nodes show how many that bundle holds on live now (migrated + editor-authored).</p>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source component (being migrated)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#27ae60"></div> Target component (survives)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#f39c12"></div> Manual migration target</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#e74c3c"></div> Retired after migration</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#6c7a7d"></div> Removed (no migration)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#9b59b6"></div> Skipped (broken ref / missing data)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source (migrated, then deleted &mdash; 0 on live)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#27ae60"></div> Target (survives; "live" = current count)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f39c12"></div> Still on live (merged/removed at content freeze)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#7f8c8d"></div> Already gone (0 on live)</div>
 </div>
 
 <div class="diagram-section">
-  <h2>Automated Migrations (3 Drush commands)</h2>
+  <h2>Automated Migrations (5, via <code>drush consolidate:run</code>)</h2>
+  <span class="status done">DONE on live &mdash; sources migrated and deleted (consolidate:cleanup)</span>
+  <p class="note">Edge = entities migrated (completed rows in <code>vspc_consolidator_map</code>). Target = current live population, which also includes editor-authored content, so it is larger than the migrated count.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  subgraph mig1["Migration 1: experience_story"]
+  subgraph mig1["1. experience_story"]
     direction LR
-    FS["featured_story\n(230)"] -->|"Runner resolves\nfield_node_ref →\n__resolved_node"| RES["__resolved_node\n(title, body,\nfield_image)"] -->|"Transformer\nfield remap"| ES["experience_story"]
-    FS -.->|"broken ref\n(no entity)"| SKIP["skipped\n(no body/image)"]:::skipped
+    FS["featured_story\n(0 on live)"]:::source -->|"122 migrated"| ES["experience_story\n549 live"]:::target
   end
 
-  subgraph mig2["Migration 2: vertical_media_carousel (new)"]
+  subgraph mig2["2. vertical_media_carousel (new bundle)"]
     direction LR
-    VVC["vertical_video_carousel\n(18)"]:::source -->|"remote_video paragraphs\nre-parented as-is"| VMC["vertical_media_carousel\n(117 total)"]:::target
-    VPC["vertical_photo_carousel\n(99)"]:::source -->|merged into\nvertical_media_carousel| VMC
+    VPC["vertical_photo_carousel\n(0)"]:::source -->|"102"| VMC["vertical_media_carousel\n149 live"]:::target
+    VVC["vertical_video_carousel\n(0)"]:::source -->|"22"| VMC
   end
 
-  subgraph mig3["Migration 3: media_carousel (highest complexity)"]
+  subgraph mig3["3. media_carousel (highest complexity)"]
     direction LR
-    SE["slideshow_experience\n(87)"]:::source -->|"experience_slide →\nmedia_with_caption paragraph"| MC["media_carousel"]:::target
-    PC["photo_carousel\n(277)"]:::source -->|"bare media ref →\nmedia_with_caption paragraph"| MC
-    SDI["single_double_image\n(653)"]:::source -->|"extract field_caption_image\nfrom each paragraph →\nmedia_with_caption paragraph(s)"| MC
+    SDI["single_double_image\n(0)"]:::source -->|"412"| MC["media_carousel\n1,151 live"]:::target
+    PC["photo_carousel\n(0)"]:::source -->|"198"| MC
+    SE["slideshow_experience\n(0)"]:::source -->|"73"| MC
+    LVE["lightbox_video_experience\n(0)"]:::source -->|"11"| MC
+  end
+
+  subgraph mig4["4. content_tiles"]
+    direction LR
+    CC["content_categories\n(0)"]:::source -->|"15"| CT["content_tile\n122 live"]:::target
+  end
+
+  subgraph mig5["5. cta_secondary_body"]
+    direction LR
+    CTA["cta\n(0)"]:::source -->|"203"| SB["secondary_body\n2,480 live"]:::target
   end
 
   classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
-  classDef skipped fill:#9b59b6,stroke:#7d3c98,color:#fff
   </div>
 </div>
 
 <div class="diagram-section">
-  <h2>Manual Migrations (editor intervention required)</h2>
+  <h2>Manual Migration (editor intervention)</h2>
+  <span class="status pending">SCHEDULED &mdash; runs at content freeze (~2 weeks before the 2026-09-19 launch); 12 blockquote still on live, as expected</span>
+  <p class="note">Not handled by the consolidator. CTAs, Content Categories, and Lightbox Video Experience were once listed here but are now automated (migrations 5, 4, and 3 above).</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  subgraph manual["Manual Merges"]
-    direction LR
-    BQ["Blockquote\n(11)"]:::source -->|manual| SBC["Secondary\nBody Copy"]:::manual
-    CTA["CTAs\n(36)"]:::source -->|manual| SBC
-    CC["Content Categories\n(41)"]:::source -->|manual| CT["Content Tiles"]:::manual
-    LVE["Lightbox Video\nExperience (16)"]:::source -->|manual| MC2["Media Carousel"]:::manual
+  BQ["blockquote\n12 live"]:::pending -->|"manual, pending"| SBC["secondary_body"]:::target
+  classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
+  classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Simple Removals (no migration)</h2>
+  <span class="status pending">SCHEDULED &mdash; 3 of 5 still on live, removed at content freeze</span>
+  <p class="note">omnivirt and video_slideshow are already gone (0 on live). The other three are removed during content freeze (~2 weeks before the 2026-09-19 launch), so their presence now is expected.</p>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  subgraph stillhere["Still on live (removal pending)"]
+    direction TB
+    T360["threshold360\n12 live"]:::pending
+    EP["experience_photo\n1 live"]:::pending
+    LVX["looping_video_experience\n1 live"]:::pending
   end
-
-  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
-  classDef manual fill:#f39c12,stroke:#c77d0a,color:#fff
-  </div>
-</div>
-
-<div class="diagram-section">
-  <h2>Simple Removals (no migration needed)</h2>
-  <div class="mermaid">
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
-flowchart LR
-  ELV["Experience\nLooping Video (1)"]:::remove --> X["REMOVED"]:::removed
-  EP["Experience\nPhoto (1)"]:::remove --> X
-  OMN["Omnivirt\n(0)"]:::remove --> X
-  T360["Threshold360\nMap (12)"]:::remove --> X
-  VS["Video\nSlideshow (13)"]:::remove --> X
-
-  classDef remove fill:#e74c3c,stroke:#c0392b,color:#fff
+  subgraph gone["Already removed (0 on live)"]
+    direction TB
+    OMN["omnivirt"]:::removed
+    VS["video_slideshow"]:::removed
+  end
+  classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
   classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
   </div>
 </div>
 
 <div class="diagram-section">
   <h2>Full Picture: Before &rarr; After</h2>
+  <p class="note">Left = source bundles the consolidator retired (all 0 on live now). Right = surviving targets with current live counts. Manual merge and remaining removals run at content freeze (~2 weeks before the 2026-09-19 launch).</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '13px' }}}%%
 flowchart TB
-  subgraph before["BEFORE (component types in migration scope)"]
+  subgraph before["BEFORE (retired sources, now 0 on live)"]
     direction TB
-    b1["featured_story (230)"]:::source
-    b2["vertical_video_carousel (18)"]:::source
-    b3["vertical_photo_carousel (99)"]:::source
-    b4["slideshow_experience (87)"]:::source
-    b5["photo_carousel (277)"]:::source
-    b6["single_double_image (653)"]:::source
-    b7["Blockquote (11)"]:::source
-    b8["CTAs (36)"]:::source
-    b9["Content Categories (41)"]:::source
-    b10["Lightbox Video Exp. (16)"]:::source
-    b11["Exp. Looping Video (1)"]:::remove
-    b12["Experience Photo (1)"]:::remove
-    b13["Omnivirt (0)"]:::remove
-    b14["Threshold360 Map (12)"]:::remove
-    b15["Video Slideshow (13)"]:::remove
+    b1["featured_story"]:::source
+    b2["vertical_video_carousel"]:::source
+    b3["vertical_photo_carousel"]:::source
+    b4["slideshow_experience"]:::source
+    b5["photo_carousel"]:::source
+    b6["single_double_image"]:::source
+    b10["lightbox_video_experience"]:::source
+    b9["content_categories"]:::source
+    b8["cta"]:::source
   end
 
-  subgraph after["AFTER (consolidated types)"]
+  subgraph after["AFTER (live counts)"]
     direction TB
-    a1["experience_story"]:::target
-    a2["vertical_media_carousel\n(117, new)"]:::target
-    a3["media_carousel"]:::target
-    a4["Secondary Body Copy\n+ Content Tiles"]:::manual
-    a5["REMOVED (5 types)"]:::removed
+    a1["experience_story\n549"]:::target
+    a2["vertical_media_carousel\n149"]:::target
+    a3["media_carousel\n1,151"]:::target
+    a6["content_tile\n122"]:::target
+    a7["secondary_body\n2,480"]:::target
+  end
+
+  subgraph pending["SCHEDULED (content freeze)"]
+    direction TB
+    p1["blockquote (12)\nmanual merge"]:::pending
+    p2["threshold360 (12)\nexperience_photo (1)\nlooping_video_experience (1)\nremoval"]:::pending
   end
 
   b1 --> a1
@@ -179,21 +207,13 @@ flowchart TB
   b4 --> a3
   b5 --> a3
   b6 --> a3
-  b7 --> a4
-  b8 --> a4
-  b9 --> a4
   b10 --> a3
-  b11 --> a5
-  b12 --> a5
-  b13 --> a5
-  b14 --> a5
-  b15 --> a5
+  b9 --> a6
+  b8 --> a7
 
   classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
-  classDef manual fill:#f39c12,stroke:#c77d0a,color:#fff
-  classDef remove fill:#e74c3c,stroke:#c0392b,color:#fff
-  classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
+  classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
   </div>
 </div>
 
