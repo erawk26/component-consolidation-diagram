@@ -94,6 +94,7 @@ Edges show how many entities were migrated; target nodes show how many that bund
   <h2>Automated Migrations (5, via <code>drush consolidate:run</code>)</h2>
   <span class="status done">DONE on live &mdash; sources migrated and deleted (consolidate:cleanup)</span>
   <p class="note">Edge = entities migrated (completed rows in <code>vspc_consolidator_map</code>). Target = current live population, which also includes editor-authored content, so it is larger than the migrated count.</p>
+  <p class="note">Horizontal vs vertical is a component-family choice, not per-slide: <code>single_double_image</code> (and photo/slideshow/lightbox) sources become the horizontal <code>media_carousel</code>, with each image a normal slide and the old Left/Right photo orientation dropped; genuinely vertical content lives in the separate <code>vertical_media_carousel</code>.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
