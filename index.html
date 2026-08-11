@@ -20,7 +20,7 @@
   .subtitle {
     text-align: center;
     color: #666;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     font-size: 0.95rem;
   }
   .diagram-section {
@@ -47,14 +47,33 @@
   }
   .status.done { background: #d4efdf; color: #1e6b3f; }
   .status.pending { background: #fdebd0; color: #99610a; }
+  .status.broken { background: #fadbd8; color: #922b21; }
   .diagram-section p.note {
     margin: 0 0 16px;
     color: #666;
     font-size: 0.85rem;
   }
+  .callout {
+    max-width: 1100px;
+    margin: 0 auto 30px;
+    background: #fff4f3;
+    border: 1px solid #f5b7b1;
+    border-left: 5px solid #c0392b;
+    border-radius: 8px;
+    padding: 16px 22px;
+    font-size: 0.9rem;
+  }
+  .callout h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: #922b21;
+  }
+  .callout p { margin: 0 0 8px; }
+  .callout p:last-child { margin-bottom: 0; }
   .mermaid {
     display: flex;
     justify-content: center;
+    overflow-x: auto;
   }
   .legend {
     max-width: 1100px;
@@ -75,84 +94,158 @@
     border-radius: 3px;
     border: 1px solid #ccc;
   }
+  table.counts {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+  table.counts th, table.counts td {
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid #eee;
+  }
+  table.counts th { background: #f4f6f7; }
+  table.counts td.bad { color: #922b21; font-weight: 600; }
+  table.counts td.good { color: #1e6b3f; }
+  code { background: #f0f2f4; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
 </style>
 </head>
 <body>
 
 <h1>VSPC Component Consolidation Map</h1>
-<p class="subtitle">2026 Rebrand. Counts verified against the rebuild <strong>live</strong> environment, 2026-07-29.<br>
-Edges show how many entities were migrated; target nodes show how many that bundle holds on live now (migrated + editor-authored). Covers both the vspc_consolidator migrations and the separate listing-grid migration (vspc_ai_listings_migrate).</p>
+<p class="subtitle">2026 Rebrand. Counts read from the rebuild <strong>live</strong> environment, <strong>2026-08-11</strong>.<br>
+Edges show entities migrated (completed rows in <code>vspc_consolidator_map</code>). Nodes show current live population.<br>
+Reference: <code>docs/plans/2026-08-11-component-consolidation-design.md</code></p>
+
+<div class="callout">
+  <h3>Two corrections since the 2026-07-29 version of this page</h3>
+  <p><strong>1. Sources have not been deleted.</strong> This page previously showed every source bundle at 0 on live. That is not the case. Phase 1 (migrate) has run, but Phase 3 (<code>consolidate:cleanup</code>) has not, so all 1,092 migrated sources are still present on live. They are removed at content freeze.</p>
+  <p><strong>2. A completed migration does not mean the content arrived.</strong> <code>vertical_media_carousel</code> reports 125 completed rows and has moved <strong>zero</strong> slides. Row counts were being read as success. Every diagram below now states whether data actually landed.</p>
+</div>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source (migrated, then deleted &mdash; 0 on live)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#27ae60"></div> Target (survives; "live" = current count)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#f39c12"></div> Still on live (merged/removed at content freeze)</div>
-  <div class="legend-item"><div class="legend-swatch" style="background:#7f8c8d"></div> Already gone (0 on live)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#4a90d9"></div> Source (migrated, still on live until cleanup)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#27ae60"></div> Target (survives)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f39c12"></div> Pending (merged/removed at content freeze)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#c0392b"></div> Broken (migration ran, data did not land)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#8e44ad"></div> Not yet migrated</div>
 </div>
 
 <div class="diagram-section">
-  <h2>Automated Migrations (5, via <code>drush consolidate:run</code>)</h2>
-  <span class="status done">DONE on live &mdash; sources migrated and deleted (consolidate:cleanup)</span>
-  <p class="note">Edge = entities migrated (completed rows in <code>vspc_consolidator_map</code>). Target = current live population, which also includes editor-authored content, so it is larger than the migrated count.</p>
-  <p class="note">Horizontal vs vertical is a component-family choice, not per-slide: <code>single_double_image</code> (and photo/slideshow/lightbox) sources become the horizontal <code>media_carousel</code>, with each image a normal slide and the old Left/Right photo orientation dropped; genuinely vertical content lives in the separate <code>vertical_media_carousel</code>.</p>
+  <h2>Did the data actually land?</h2>
+  <p class="note">Verified per migration against live, 2026-08-11. A <code>completed</code> map row only means a target entity was saved. These columns check the target's fields.</p>
+  <table class="counts">
+    <tr><th>Migration</th><th>Completed rows</th><th>Verification</th><th>Result</th></tr>
+    <tr><td><code>experience_story</code></td><td>123</td><td>121 targets have a heading</td><td class="good">Landed</td></tr>
+    <tr><td><code>vertical_media_carousel</code></td><td>125</td><td>35 source slides, 0 on targets</td><td class="bad">BROKEN</td></tr>
+    <tr><td><code>media_carousel</code></td><td>625</td><td>623 targets have slides (1,272 slides)</td><td class="good">Landed</td></tr>
+    <tr><td><code>content_tiles</code></td><td>16</td><td>targets populated</td><td class="good">Landed</td></tr>
+    <tr><td><code>cta_secondary_body</code></td><td>203</td><td>201 targets have a body</td><td class="good">Landed</td></tr>
+  </table>
+</div>
+
+<div class="diagram-section">
+  <h2>Automated Migrations (via <code>drush consolidate:run</code>)</h2>
+  <span class="status done">MIGRATED on live</span>
+  <span class="status pending">sources NOT yet deleted (cleanup runs at content freeze)</span>
+  <span class="status broken">vertical_media_carousel moved 0 slides</span>
+  <p class="note">Edge = entities migrated. Node = current live count. Target counts include editor-authored content, so they exceed the migrated figure. <code>media_carousel</code> holds 688 live, of which 625 were migrated and roughly 63 are hand authored legacy.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  subgraph mig1["1. experience_story"]
+  %% Subgraphs are declared in reverse so they render top-to-bottom as 1..5.
+  subgraph mig5["5. cta_secondary_body"]
     direction LR
-    FS["featured_story\n(0 on live)"]:::source -->|"122 migrated"| ES["experience_story\n549 live"]:::target
-  end
-
-  subgraph mig2["2. vertical_media_carousel (new bundle)"]
-    direction LR
-    VPC["vertical_photo_carousel\n(0)"]:::source -->|"102"| VMC["vertical_media_carousel\n149 live"]:::target
-    VVC["vertical_video_carousel\n(0)"]:::source -->|"22"| VMC
-  end
-
-  subgraph mig3["3. media_carousel (highest complexity)"]
-    direction LR
-    SDI["single_double_image\n(0)"]:::source -->|"412 migrated\n373 one-image, 37 two-image, 2 empty"| MC["media_carousel\n1,151 live"]:::target
-    PC["photo_carousel\n(0)"]:::source -->|"198"| MC
-    SE["slideshow_experience\n(0)"]:::source -->|"73"| MC
-    LVE["lightbox_video_experience\n(0)"]:::source -->|"11"| MC
+    CTA["cta<br/>203 live"]:::source -->|"203"| SB["secondary_body<br/>1,686 live"]:::target
   end
 
   subgraph mig4["4. content_tiles"]
     direction LR
-    CC["content_categories\n(0)"]:::source -->|"15"| CT["content_tile\n122 live"]:::target
+    CC["content_categories<br/>16 live"]:::source -->|"16"| CT["content_tile<br/>91 live"]:::target
   end
 
-  subgraph mig5["5. cta_secondary_body"]
+  subgraph mig3["3. media_carousel"]
     direction LR
-    CTA["cta\n(0)"]:::source -->|"203"| SB["secondary_body\n2,480 live"]:::target
+    SDI["single_double_image<br/>414 live"]:::source -->|"414"| MC["media_carousel<br/>688 live"]:::target
+    PC["photo_carousel<br/>200 live"]:::source -->|"200"| MC
+    LVE["lightbox_video_experience<br/>11 live"]:::source -->|"11"| MC
+    VC["video_carousel<br/>248 live"]:::todo -.->|"not yet run"| MC
+  end
+
+  subgraph mig2["2. vertical_media_carousel"]
+    direction LR
+    VPC["vertical_photo_carousel<br/>102 live"]:::source -->|"102"| VMC["vertical_media_carousel<br/>125 live<br/>0 slides landed"]:::broken
+    VVC["vertical_video_carousel<br/>23 live"]:::source -->|"23"| VMC
+  end
+
+  subgraph mig1["1. experience_story"]
+    direction LR
+    FS["featured_story<br/>123 live"]:::source -->|"123 migrated"| ES["experience_story<br/>276 live"]:::target
   end
 
   classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  classDef broken fill:#c0392b,stroke:#922b21,color:#fff
+  classDef todo fill:#8e44ad,stroke:#6c3483,color:#fff
   </div>
 </div>
 
 <div class="diagram-section">
-  <h2>Listing Grids &rarr; Intelligent Listings (separate module: <code>vspc_ai_listings_migrate</code>)</h2>
-  <span class="status done">DONE on live &mdash; profile_grid migrated and removed (0 on live)</span>
-  <p class="note">Not part of vspc_consolidator. <code>drush vspc-ai-listings:migrate-profile-grid</code> turns each static profile_grid into a miles_ai paragraph wrapped in an ai_component, remapping the grid's scope and facets. This migration keeps no ledger table, so the migrated count is from the run log (worksheet Step 8), not re-derived from live. The ai_component live total includes editor-authored components, not only migrated grids.</p>
+  <h2><code>video_carousel</code>: the remaining gap</h2>
+  <span class="status pending">TRANSFORMER WRITTEN, not yet run anywhere</span>
+  <p class="note">248 components holding 489 slides, all <code>remote_video</code>. Consolidated by nothing until now. Added as a <code>media_carousel</code> source on <code>fix/eo-video-carousel-consolidation</code>. Its slides are copied across as <code>remote_video</code> with no paragraph conversion, because <code>field_media_slides</code> already allows that bundle.</p>
+  <p class="note"><strong>Blocker before this runs:</strong> <code>video_carousel</code> has component-level heading and body fields (the H2 and intro above the carousel). <code>media_carousel</code> has neither. 152 of 248 components carry a heading and 111 carry a body, so running this today loses 152 headings. The agreed fix is to emit a <code>secondary_body</code> above the carousel, which needs runner support that does not exist yet.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  PG["profile_grid\n(0 on live)"]:::source -->|"118 migrated,\n26 orphans skipped"| AIC["ai_component\n(miles_ai paragraph)\n143 live"]:::target
-  classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
+  VC2["video_carousel<br/>248 components<br/>489 remote_video slides"]:::todo -->|"slides copied as-is"| MC2["media_carousel<br/>field_media_slides"]:::target
+  VC2 -.->|"152 headings + 111 bodies<br/>NO destination field"| GAP["secondary_body<br/>above the carousel<br/>NOT BUILT"]:::pending
+  classDef todo fill:#8e44ad,stroke:#6c3483,color:#fff
+  classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
+  classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
+  </div>
+</div>
+
+<div class="diagram-section">
+  <h2>Slide paragraph types inside a carousel</h2>
+  <p class="note">The bundles allowed on <code>field_media_slides</code> are not interchangeable, and only two may ever be created by a migration. This rule was missing from the original design document and is the reason a conversion nearly destroyed listing references on 85 slides.</p>
+  <table class="counts">
+    <tr><th>Bundle</th><th>Use</th><th>Live count</th></tr>
+    <tr><td><code>media_with_caption</code></td><td>Image slides</td><td>1,261</td></tr>
+    <tr><td><code>remote_video</code></td><td>Video slides. Carries <code>field_listing_refs</code> and <code>field_profile_reference</code></td><td>11</td></tr>
+    <tr><td><code>media_slide</code></td><td><strong>Legacy only, never emitted by a migration.</strong> Has no equivalent for listing or profile references</td><td>175</td></tr>
+  </table>
+  <p class="note" style="margin-top:14px"><strong>Naming trap:</strong> <code>media_carousel</code> was labelled <code>Video Slideshow</code> from 2021 until it was renamed to <code>Horizontal Media Carousel</code> on 2026-08-10. So "Video Slideshow" in older documents means <code>media_carousel</code> itself, not <code>video_carousel</code>, and <code>media_slide</code> is that legacy bundle's slide type. The 175 remaining <code>media_slide</code> paragraphs are scheduled for migration to <code>remote_video</code>.</p>
+</div>
+
+<div class="diagram-section">
+  <h2><code>slideshow_experience</code> stays standalone</h2>
+  <span class="status done">DECIDED, locked by a unit test</span>
+  <p class="note">Earlier versions of this page showed <code>slideshow_experience</code> folding into <code>media_carousel</code>. That is no longer the plan. It is the genuine content slide carousel and remains its own component, with 75 instances on live. <code>MediaCarouselTransformer</code> rejects it explicitly so a stale map row cannot replay it.</p>
+</div>
+
+<div class="diagram-section">
+  <h2>Listing Grids to Intelligent Listings (separate module: <code>vspc_ai_listings_migrate</code>)</h2>
+  <span class="status done">DONE on live, profile_grid removed (0 on live)</span>
+  <p class="note">Not part of vspc_consolidator. <code>drush vspc-ai-listings:migrate-profile-grid</code> turns each static profile_grid into a miles_ai paragraph wrapped in an ai_component, remapping the grid's scope and facets. This migration keeps no ledger table, so the migrated count comes from the run log, not from live. The ai_component total includes editor-authored components.</p>
+  <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+  PG["profile_grid<br/>0 on live"]:::removed -->|"118 migrated,<br/>26 orphans skipped"| AIC["ai_component<br/>(miles_ai paragraph)<br/>124 live"]:::target
+  classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
   </div>
 </div>
 
 <div class="diagram-section">
   <h2>Manual Migration (editor intervention)</h2>
-  <span class="status pending">SCHEDULED &mdash; runs at content freeze (August 24 freeze, launch ~September 22-23); 12 blockquote still on live, as expected</span>
-  <p class="note">Not handled by the consolidator. CTAs, Content Categories, and Lightbox Video Experience were once listed here but are now automated (migrations 5, 4, and 3 above).</p>
+  <span class="status pending">SCHEDULED at content freeze</span>
+  <p class="note">Not handled by the consolidator. CTAs, Content Categories and Lightbox Video Experience were once listed here and are now automated (migrations 5, 4 and 3 above).</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  BQ["blockquote\n12 live"]:::pending -->|"manual, pending"| SBC["secondary_body"]:::target
+  BQ["blockquote<br/>11 live"]:::pending -->|"manual, pending"| SBC["secondary_body"]:::target
   classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
   </div>
@@ -160,75 +253,46 @@ flowchart LR
 
 <div class="diagram-section">
   <h2>Simple Removals (no migration)</h2>
-  <span class="status pending">SCHEDULED &mdash; 3 of 5 still on live, removed at content freeze</span>
-  <p class="note">omnivirt and video_slideshow are already gone (0 on live). The other three are removed during content freeze (August 24 freeze, launch ~September 22-23), so their presence now is expected.</p>
+  <span class="status pending">SCHEDULED at content freeze</span>
+  <p class="note">All three are still on live, which is expected. They are removed during content freeze. The "video_slideshow" entry shown on earlier versions of this page has been removed: it was <code>media_carousel</code> under its old label, and that bundle is very much alive as the consolidation target. What survives from it is roughly 63 hand authored legacy carousels, counted inside the 688 above.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-  subgraph stillhere["Still on live (removal pending)"]
-    direction TB
-    T360["threshold360\n12 live"]:::pending
-    EP["experience_photo\n1 live"]:::pending
-    LVX["looping_video_experience\n1 live"]:::pending
-  end
-  subgraph gone["Already removed (0 on live)"]
-    direction TB
-    OMN["omnivirt"]:::removed
-    VS["video_slideshow"]:::removed
-  end
+  T360["threshold360<br/>12 live"]:::pending
+  EP["experience_photo<br/>1 live"]:::pending
+  LVX["looping_video_experience<br/>1 live"]:::pending
   classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
-  classDef removed fill:#7f8c8d,stroke:#616d6e,color:#fff
   </div>
 </div>
 
 <div class="diagram-section">
-  <h2>Full Picture: Before &rarr; After</h2>
-  <p class="note">Left = source bundles the consolidator retired (all 0 on live now). Right = surviving targets with current live counts. Manual merge and remaining removals run at content freeze (August 24 freeze, launch ~September 22-23).</p>
+  <h2>Full Picture: Before and After</h2>
+  <p class="note">Left = source bundles the consolidator retires. All are still on live pending cleanup. Right = surviving targets with current live counts.</p>
   <div class="mermaid">
 %%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '13px' }}}%%
-flowchart TB
-  subgraph before["BEFORE (retired sources, now 0 on live)"]
-    direction TB
-    b1["featured_story"]:::source
-    b2["vertical_video_carousel"]:::source
-    b3["vertical_photo_carousel"]:::source
-    b4["slideshow_experience"]:::source
-    b5["photo_carousel"]:::source
-    b6["single_double_image"]:::source
-    b10["lightbox_video_experience"]:::source
-    b9["content_categories"]:::source
-    b8["cta"]:::source
-  end
-
-  subgraph after["AFTER (live counts)"]
-    direction TB
-    a1["experience_story\n549"]:::target
-    a2["vertical_media_carousel\n149"]:::target
-    a3["media_carousel\n1,151"]:::target
-    a6["content_tile\n122"]:::target
-    a7["secondary_body\n2,480"]:::target
-  end
-
-  subgraph pending["SCHEDULED (content freeze)"]
-    direction TB
-    p1["blockquote (12)\nmanual merge"]:::pending
-    p2["threshold360 (12)\nexperience_photo (1)\nlooping_video_experience (1)\nremoval"]:::pending
-  end
-
-  b1 --> a1
-  b2 --> a2
-  b3 --> a2
-  b4 --> a3
-  b5 --> a3
-  b6 --> a3
-  b10 --> a3
-  b9 --> a6
-  b8 --> a7
+flowchart LR
+  %% No subgraphs here on purpose: mermaid ignores a subgraph's `direction`
+  %% when edges cross subgraph boundaries, which flattened this into an
+  %% unreadable strip. Plain LR lets it lay out left-to-right correctly.
+  b1["featured_story<br/>123"]:::source --> a1["experience_story<br/>276"]:::target
+  b3["vertical_photo_carousel<br/>102"]:::source --> a2["vertical_media_carousel<br/>125<br/>0 slides landed"]:::broken
+  b2["vertical_video_carousel<br/>23"]:::source --> a2
+  b6["single_double_image<br/>414"]:::source --> a3["media_carousel<br/>688"]:::target
+  b5["photo_carousel<br/>200"]:::source --> a3
+  b10["lightbox_video_experience<br/>11"]:::source --> a3
+  t1["video_carousel<br/>248"]:::todo -.->|"not yet run"| a3
+  b9["content_categories<br/>16"]:::source --> a6["content_tile<br/>91"]:::target
+  b8["cta<br/>203"]:::source --> a7["secondary_body<br/>1,686"]:::target
+  p1["blockquote<br/>11"]:::pending -.->|"manual, at freeze"| a7
+  s1["slideshow_experience<br/>75"]:::target --> s2["stays standalone"]:::target
+  p2["threshold360 12<br/>experience_photo 1<br/>looping_video_experience 1"]:::pending -.->|"removed at freeze"| p3["deleted"]:::pending
 
   classDef source fill:#4a90d9,stroke:#2c6fad,color:#fff
   classDef target fill:#27ae60,stroke:#1e8c4c,color:#fff
   classDef pending fill:#f39c12,stroke:#c77d0a,color:#fff
-  </div>
+  classDef broken fill:#c0392b,stroke:#922b21,color:#fff
+  classDef todo fill:#8e44ad,stroke:#6c3483,color:#fff
+</div>
 </div>
 
 <script type="module">
